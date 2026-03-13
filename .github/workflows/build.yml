@@ -1,0 +1,135 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  QT_VERSION: '6.10.0'
+  FFMPEG_VERSION: '6.1'
+  CMAKE_VERSION: '3.28.0'
+  BUILD_TYPE: 'Release'
+
+jobs:
+  build-windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Setup MSYS2 and MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: |
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-ninja
+          mingw-w64-x86_64-ccache
+          
+    - name: Install Qt 6.10.0
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: windows
+        target: desktop
+        arch: win64_mingw
+        install-deps: true
+        cache: true
+        setup-python: false
+        
+    - name: Download and install FFmpeg 6.x
+      run: |
+        $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2024-12-01-12-50/ffmpeg-n6.1-1-gd6b5e9f5e9-win64-gpl-shared-6.1.zip"
+        $ffmpegZip = "ffmpeg.zip"
+        Invoke-WebRequest -Uri $ffmpegUrl -OutFile $ffmpegZip
+        Expand-Archive -Path $ffmpegZip -DestinationPath "C:\ffmpeg"
+        Remove-Item $ffmpegZip
+        echo "FFMPEG_DIR=C:\ffmpeg" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "PATH=$env:PATH;C:\ffmpeg\bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+        
+    - name: Configure CMake
+      shell: msys2 {0}
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DCMAKE_PREFIX_PATH="${{ env.QT_PREFIX }}" \
+          -DCMAKE_C_COMPILER=gcc \
+          -DCMAKE_CXX_COMPILER=g++ \
+          -DCMAKE_MAKE_PROGRAM=ninja
+        
+    - name: Build project
+      shell: msys2 {0}
+      run: |
+        cd build
+        cmake --build . --config ${{ env.BUILD_TYPE }} --parallel
+        
+    - name: Collect build artifacts
+      shell: msys2 {0}
+      run: |
+        mkdir -p artifacts
+        cp build/ScreenStreamer.exe artifacts/
+        cp C:/ffmpeg/bin/*.dll artifacts/ 2>/dev/null || true
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: github.event_name != 'push' || github.ref_type != 'tag'
+      with:
+        name: screen-streamer-windows
+        path: artifacts/
+        retention-days: 7
+        
+    - name: Deploy Qt dependencies
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      shell: powershell
+      run: |
+        $QtPath = "C:\Qt\${{ env.QT_VERSION }}\mingw_64\bin"
+        $env:PATH = "$QtPath;$env:PATH"
+        
+        mkdir -p deploy
+        cp build/ScreenStreamer.exe deploy/
+        
+        Write-Host "Running windeployqt..."
+        windeployqt --qmldir ..\src --release deploy\ScreenStreamer.exe
+        
+        Write-Host "Copying FFmpeg DLLs..."
+        cp C:\ffmpeg\bin\*.dll deploy\ 2>$null
+        
+    - name: Create release package
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      shell: msys2 {0}
+      run: |
+        mkdir -p release/ScreenStreamer
+        cp deploy/* release/ScreenStreamer/
+        cp -r ../resources release/ScreenStreamer/ 2>/dev/null || true
+        cp ../README.md release/ScreenStreamer/
+        cp ../LICENSE release/ScreenStreamer/ 2>/dev/null || true
+        
+        cd release
+        7z a -tzip ScreenStreamer-${{ github.ref_name }}-windows-x64.zip ScreenStreamer
+        
+    - name: Create installer (optional)
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      shell: powershell
+      run: |
+        Write-Host "Note: InnoSetup installer creation requires additional setup."
+        Write-Host "To create installer, install InnoSetup and run:"
+        Write-Host "iscc deploy/InnoSetup/installer.iss"
+        
+    - name: Upload release assets
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/ScreenStreamer-${{ github.ref_name }}-windows-x64.zip
+        draft: false
+        prerelease: false
