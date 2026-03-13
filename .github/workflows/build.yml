@@ -48,7 +48,7 @@ jobs:
         
     - name: Download and install FFmpeg 6.x
       run: |
-        $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2024-12-01-12-50/ffmpeg-n6.1-1-gd6b5e9f5e9-win64-gpl-shared-6.1.zip"
+        $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2024-12-31-13-02/ffmpeg-n6.1.2-16-g30cd0d7bd0-win64-gpl-shared-6.1.zip"
         $ffmpegZip = "ffmpeg.zip"
         Invoke-WebRequest -Uri $ffmpegUrl -OutFile $ffmpegZip
         Expand-Archive -Path $ffmpegZip -DestinationPath "C:\ffmpeg"
