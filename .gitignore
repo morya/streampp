@@ -1,0 +1,52 @@
+# Build directories
+build/
+bin/
+*.user
+*.user.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Qt files
+moc_*
+qrc_*
+ui_*
+Makefile
+*.o
+*.obj
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# Output directories
+Output/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Config files (user-specific)
+config.json
+
+# Dependencies
+third_party/
+deps/
