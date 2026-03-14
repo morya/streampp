@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  QT_VERSION: '6.8.3'
+  QT_VERSION: '6.10.3'
   FFMPEG_VERSION: '6.1'
   CMAKE_VERSION: '3.28.0'
   BUILD_TYPE: 'Release'
