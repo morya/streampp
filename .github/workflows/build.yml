@@ -37,6 +37,7 @@ jobs:
           
     - name: Install Qt 6.10.0
       uses: jurplel/install-qt-action@v4
+      id: install-qt
       with:
         version: ${{ env.QT_VERSION }}
         host: windows
@@ -45,6 +46,13 @@ jobs:
         install-deps: true
         cache: true
         setup-python: false
+        
+    - name: Set Qt environment variables
+      shell: powershell
+      run: |
+        $QtPath = "C:\Qt\${{ env.QT_VERSION }}\mingw_64"
+        echo "QT_PREFIX=$QtPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "PATH=$QtPath\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
         
     - name: Download and install FFmpeg 6.x
       run: |
@@ -61,9 +69,12 @@ jobs:
       run: |
         mkdir -p build
         cd build
+        # 使用已知的 Qt 安装路径
+        QT_PATH="C:/Qt/${{ env.QT_VERSION }}/mingw_64"
+        echo "Using Qt path: $QT_PATH"
         cmake .. -G "Ninja" \
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-          -DCMAKE_PREFIX_PATH="${{ env.QT_PREFIX }}" \
+          -DCMAKE_PREFIX_PATH="$QT_PATH" \
           -DCMAKE_C_COMPILER=gcc \
           -DCMAKE_CXX_COMPILER=g++ \
           -DCMAKE_MAKE_PROGRAM=ninja
