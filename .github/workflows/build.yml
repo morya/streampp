@@ -69,9 +69,19 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        # 使用已知的 Qt 安装路径
-        QT_PATH="C:/Qt/${{ env.QT_VERSION }}/mingw_64"
-        echo "Using Qt path: $QT_PATH"
+        # 使用 install-qt-action 设置的 QT_PREFIX 环境变量
+        echo "QT_PREFIX environment variable: $QT_PREFIX"
+        
+        # 如果 QT_PREFIX 未设置，使用默认路径
+        if [ -z "$QT_PREFIX" ]; then
+          QT_PREFIX="C:/Qt/${{ env.QT_VERSION }}/mingw_64"
+          echo "Using default Qt prefix: $QT_PREFIX"
+        fi
+        
+        # 转换为 MSYS2 路径格式（如果需要）
+        QT_PATH=$(echo "$QT_PREFIX" | sed 's|\\|/|g')
+        echo "Using Qt path for CMake: $QT_PATH"
+        
         cmake .. -G "Ninja" \
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
           -DCMAKE_PREFIX_PATH="$QT_PATH" \
