@@ -34,14 +34,19 @@ jobs:
           mingw-w64-x86_64-ninja
           mingw-w64-x86_64-ccache
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        aqtversion: '==3.1.*'
-        version: '6.10.3'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_mingw'
+    - name: Install Qt with aqt
+      shell: powershell
+      run: |
+        # 安装 aqt
+        pip install aqtinstall==3.1.9
+        
+        # 安装完整的 Qt（包含所有模块）
+        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_mingw
+        
+        # 确保 Multimedia 模块已安装
+        aqt install-tool windows desktop tools_ifw
+        aqt install-tool windows desktop tools_cmake
+        aqt install-tool windows desktop tools_ninja
         
     - name: Set Qt environment variables
       shell: powershell
@@ -49,6 +54,15 @@ jobs:
         $QtPath = "C:\Qt\${{ env.QT_VERSION }}\mingw_64"
         echo "QT_PREFIX=$QtPath" | Out-File -FilePath $env:GITHUB_ENV -Append
         echo "PATH=$QtPath\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+        
+        # 验证 Multimedia 模块是否存在
+        Write-Host "Checking Qt Multimedia installation..."
+        if (Test-Path "$QtPath\lib\cmake\Qt6Multimedia") {
+            Write-Host "✓ Qt Multimedia module found"
+        } else {
+            Write-Host "✗ Qt Multimedia module NOT found"
+            Get-ChildItem "$QtPath\lib\cmake\" | ForEach-Object { Write-Host "  - $_" }
+        }
         
     - name: Download and install FFmpeg 6.x
       run: |
@@ -83,7 +97,8 @@ jobs:
           -DCMAKE_PREFIX_PATH="$QT_PATH" \
           -DCMAKE_C_COMPILER=gcc \
           -DCMAKE_CXX_COMPILER=g++ \
-          -DCMAKE_MAKE_PROGRAM=ninja
+          -DCMAKE_MAKE_PROGRAM=ninja \
+          -DQT_DEBUG_FIND_PACKAGE=ON
         
     - name: Build project
       shell: msys2 {0}
