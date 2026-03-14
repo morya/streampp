@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 env:
-  QT_VERSION: '6.10.0'
+  QT_VERSION: '6.8.3'
   FFMPEG_VERSION: '6.1'
   CMAKE_VERSION: '3.28.0'
   BUILD_TYPE: 'Release'
@@ -20,7 +20,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         
@@ -34,8 +34,8 @@ jobs:
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
           mingw-w64-x86_64-ccache
-          
-    - name: Install Qt 6.10.0
+
+    - name: Install Qt
       uses: jurplel/install-qt-action@v4
       id: install-qt
       with:
