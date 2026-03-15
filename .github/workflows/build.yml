@@ -34,20 +34,16 @@ jobs:
           mingw-w64-x86_64-ninja
           mingw-w64-x86_64-ccache
 
-    - name: Install Qt with aqt
-      shell: powershell
-      run: |
-        # 安装 aqt
-        pip install aqtinstall==3.1.9
-        
-        # 安装完整的 Qt（包含所有模块）
-        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_mingw
-        
-        # 确保 Multimedia 模块已安装
-        aqt install-tool windows desktop tools_ifw
-        aqt install-tool windows desktop tools_cmake
-        aqt install-tool windows desktop tools_ninja
-        
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        aqtversion: '==3.1.*'
+        version: '6.10.3'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_mingw'
+        modules: 'qtmultimedia qtwebchannel qtwebsockets'
+
     - name: Set Qt environment variables
       shell: powershell
       run: |
