@@ -47,17 +47,17 @@ jobs:
     - name: Set Qt environment variables
       shell: powershell
       run: |
-        $QtPath = "C:\Qt\${{ env.QT_VERSION }}\mingw_64"
+        $QtPath = "C:/Qt/${{ env.QT_VERSION }}/mingw_64"
         echo "QT_PREFIX=$QtPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-        echo "PATH=$QtPath\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "PATH=$QtPath/bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
         
         # 验证 Multimedia 模块是否存在
         Write-Host "Checking Qt Multimedia installation..."
-        if (Test-Path "$QtPath\lib\cmake\Qt6Multimedia") {
+        if (Test-Path "$QtPath/lib/cmake/Qt6Multimedia") {
             Write-Host "✓ Qt Multimedia module found"
         } else {
             Write-Host "✗ Qt Multimedia module NOT found"
-            Get-ChildItem "$QtPath\lib\cmake\" | ForEach-Object { Write-Host "  - $_" }
+            Get-ChildItem "$QtPath/lib/cmake" | ForEach-Object { Write-Host "  - $_" }
         }
         
     - name: Download and install FFmpeg 6.x
@@ -65,10 +65,10 @@ jobs:
         $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2024-12-31-13-02/ffmpeg-n6.1.2-16-g30cd0d7bd0-win64-gpl-shared-6.1.zip"
         $ffmpegZip = "ffmpeg.zip"
         Invoke-WebRequest -Uri $ffmpegUrl -OutFile $ffmpegZip
-        Expand-Archive -Path $ffmpegZip -DestinationPath "C:\ffmpeg"
+        Expand-Archive -Path $ffmpegZip -DestinationPath "C:/ffmpeg"
         Remove-Item $ffmpegZip
-        echo "FFMPEG_DIR=C:\ffmpeg" | Out-File -FilePath $env:GITHUB_ENV -Append
-        echo "PATH=$env:PATH;C:\ffmpeg\bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "FFMPEG_DIR=C:/ffmpeg" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "PATH=$env:PATH;C:/ffmpeg/bin" | Out-File -FilePath $env:GITHUB_ENV -Append
         
     - name: Configure CMake
       shell: msys2 {0}
@@ -121,17 +121,17 @@ jobs:
       if: github.event_name == 'push' && github.ref_type == 'tag'
       shell: powershell
       run: |
-        $QtPath = "C:\Qt\${{ env.QT_VERSION }}\mingw_64\bin"
+        $QtPath = "C:/Qt/${{ env.QT_VERSION }}/mingw_64/bin"
         $env:PATH = "$QtPath;$env:PATH"
         
         mkdir -p deploy
         cp build/ScreenStreamer.exe deploy/
         
         Write-Host "Running windeployqt..."
-        windeployqt --qmldir ..\src --release deploy\ScreenStreamer.exe
+        windeployqt --qmldir ../src --release deploy/ScreenStreamer.exe
         
         Write-Host "Copying FFmpeg DLLs..."
-        cp C:\ffmpeg\bin\*.dll deploy\ 2>$null
+        cp C:/ffmpeg/bin/*.dll deploy/ 2>$null
         
     - name: Create release package
       if: github.event_name == 'push' && github.ref_type == 'tag'
